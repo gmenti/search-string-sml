@@ -13,11 +13,25 @@ fun readFile(path : string) =
         val _ = TextIO.closeIn(file)
     in String.tokens (fn c => c = #"\n") poem
     end
-    
-val fragments = readFile("./fragments.txt");
-val words = readFile("./words.txt");
 
-writeFile("./candidates.txt", words);
+fun verify (word, []) = false
+  | verify (word, x::xs) = 
+  	if word = x
+  	then true
+  	else verify(word, xs);
 
-fragments;
-words;
+fun first (x::xs) = x;
+
+datatype list = Fragments | Candidates | Verifieds;
+
+fun getListPath (path) =
+	if path = Fragments then "./fragments.txt" else
+	if path = Candidates then "./candidates.txt" else
+	if path = Verifieds then "./verifieds.txt" else
+  	raise Fail "Unknown file path";
+  
+val fragments = readFile(getListPath(Fragments));
+val candidates = readFile(getListPath(Candidates));
+val verifieds = [];
+
+verify(first(candidates), fragments);
