@@ -1,5 +1,5 @@
 fun toFileFormat(data) = 
-      foldl (fn (x1, x2) => x1  ^ "\n" ^ x2) (hd data) (tl data)
+      foldl (fn (x1, x2) => x1  ^ "\n" ^ x2) (hd data) (tl data);
 
 fun writeFile(path : string, data) =
 	let val file = TextIO.openOut(path)
@@ -32,26 +32,38 @@ fun first (x::xs) = x;
 
 fun convertStringListToCharList ([]) = []
   | convertStringListToCharList (x::xs) = String.explode(x) :: convertStringListToCharList(xs);
-
-fun verify ([], col) = true
-  | verify (x::xs, col) = 
-  	if existCharInCharList(x, col)
-  	then verify(xs, col)
-  	else false;
   	
 val fragments = convertStringListToCharList(readFile(getListPath(Fragments)));
 val candidates = convertStringListToCharList(readFile(getListPath(Candidates)));
 val verifieds = [];
- 
-fragments;
-candidates;
 
-String.explode(first(candidates));
-convertStringListToCharList(fragments);
- 
-verify(
-	String.explode(first(candidates)),
-	convertStringListToCharList(fragments)
-);
+fun pop ([]) = []
+  | pop (x::xs) = xs;
 
-verify(first(candidates), fragments);
+fun diff ([], b) = b
+  | diff (a, []) = a
+  | diff (x::xs, b::bs) = if x = b then diff(xs, bs) else x::diff(xs, b::bs);
+
+fun contains ([], _) = true
+  | contains (_, []) = false
+  | contains (a, b) = String.isSubstring(String.implode(a))(String.implode(b));
+
+fun verify ([], _) = true
+  | verify (_, []) = false
+  | verify (c::cs, f::fs) = 
+  	if List.length(f) = 1
+  	then 
+  		if c = first(f)
+  		then verify(cs, fs)
+  		else verify(c::cs, fs)
+  	else 
+  		if contains(f, c::cs)
+  		then verify(diff(c::cs, f), fs)
+  		else verify(c::cs, fs)
+  	;
+  	
+
+
+fun filter (candidate) = verify(candidate, fragments);
+val vers = List.filter filter candidates;
+
