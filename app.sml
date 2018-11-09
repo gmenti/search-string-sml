@@ -1,18 +1,28 @@
-fun toFileFormat(data) = 
-      foldl (fn (x1, x2) => x1  ^ "\n" ^ x2) (hd data) (tl data);
+(*
+	Nome: Giuseppe Menti
+	Referências:
+	http://smlnj.org/install/
+	https://learnxinyminutes.com/docs/standard-ml/
+	http://sml-family.org/Basis/string.html
+	http://sml-family.org/Basis/list.html
+	https://stackoverflow.com/questions/13430352/how-to-use-and-operator-in-if-statements-in-sml
+*)
 
-fun writeFile(path : string, data) =
+val toFileFormat = String.concatWith("\n");
+fun isLineBreak (c) = c = #"\n";
+
+fun writeFile(path, data) =
 	let val file = TextIO.openOut(path)
-		val _ = TextIO.output(file, toFileFormat(data))
+			val _ = TextIO.output(file, toFileFormat(data))
 	in TextIO.closeOut(file)
-	end
+	end;
 
-fun readFile(path : string) =
-    let val file = TextIO.openIn(path)
-    	val poem = TextIO.inputAll(file)
-        val _ = TextIO.closeIn(file)
-    in String.tokens (fn c => c = #"\n") poem
-    end
+fun readFile(path) =
+	let val file = TextIO.openIn(path)
+			val data = TextIO.inputAll(file)
+			val _ = TextIO.closeIn(file)
+	in String.tokens(isLineBreak)(data)
+	end;
 
 datatype collection = Fragments | Candidates | Verifieds;
 
@@ -20,23 +30,17 @@ fun getListPath (path) =
 	if path = Fragments then "./fragments.txt" else
 	if path = Candidates then "./candidates.txt" else
 	if path = Verifieds then "./verifieds.txt" else
-  	raise Fail "Unknown file path";
+	raise Fail "Unknown file path";
   	
 fun existCharInCharList (word, []) = false
   | existCharInCharList (word, x::xs) = 
-  	if word = x
-  	then true
-  	else existCharInCharList(word, xs);
+	if word = x then true else existCharInCharList(word, xs);
 
 fun first (x::xs) = x;
 
 fun convertStringListToCharList ([]) = []
   | convertStringListToCharList (x::xs) = String.explode(x) :: convertStringListToCharList(xs);
   	
-val fragments = convertStringListToCharList(readFile(getListPath(Fragments)));
-val candidates = convertStringListToCharList(readFile(getListPath(Candidates)));
-val verifieds = [];
-
 fun pop ([]) = []
   | pop (x::xs) = xs;
 
@@ -61,9 +65,16 @@ fun verify ([], _) = true
   		then verify(diff(c::cs, f), fs)
   		else verify(c::cs, fs)
   	;
-  	
 
+val fragments = convertStringListToCharList(readFile(getListPath(Fragments)));
+val candidates = convertStringListToCharList(readFile(getListPath(Candidates)));
 
 fun filter (candidate) = verify(candidate, fragments);
-val vers = List.filter filter candidates;
+val verifieds = List.filter(filter)(candidates);
 
+writeFile(
+	getListPath(Verifieds),
+	List.map(String.implode)(verifieds)
+);
+
+val _ = print("Arquivo gerado com as palavras resultantes em './verifies.txt'.\n");
